@@ -9,7 +9,8 @@ const PROVIDER_ID = "coreinfra";
 const PROVIDER_NAME = "CoreInfra AI Hub";
 const DEFAULT_HUB_BASE_URL = "https://hub.coreinfra.ai";
 const FETCH_TIMEOUT_MS = 10_000;
-type CoreInfraFamily = "openai" | "anthropic";
+type CoreInfraFamily = "openai" | "anthropic" | "deepseek";
+const COREINFRA_FAMILIES = ["openai", "anthropic", "deepseek"] as const;
 
 type CoreInfraPrices = {
   input_tokens?: number;
@@ -76,9 +77,21 @@ function builtinModel(
 function familyConfig(family: CoreInfraFamily): {
   api: "openai-responses" | "anthropic-messages";
   baseUrl: string;
+  compat?: ProviderModelConfig["compat"];
 } {
   if (family === "anthropic") {
     return { api: "anthropic-messages", baseUrl: anthropicBaseUrl() };
+  }
+
+  if (family === "deepseek") {
+    return {
+      api: "anthropic-messages",
+      baseUrl: anthropicBaseUrl(),
+      compat: {
+        supportsEagerToolInputStreaming: false,
+        forceAdaptiveThinking: true,
+      },
+    };
   }
 
   return { api: "openai-responses", baseUrl: openAiBaseUrl() };
@@ -91,9 +104,9 @@ function buildModels(hub: HubResponse): {
   const models: ProviderModelConfig[] = [];
   const warnings: string[] = [];
 
-  for (const family of ["openai", "anthropic"] as const) {
+  for (const family of COREINFRA_FAMILIES) {
     const hubModels = hub.providers?.[family]?.models ?? {};
-    const { api, baseUrl } = familyConfig(family);
+    const { api, baseUrl, compat } = familyConfig(family);
 
     for (const [modelId, hubModel] of Object.entries(hubModels)) {
       const builtin = builtinModel(family, modelId);
@@ -113,7 +126,7 @@ function buildModels(hub: HubResponse): {
         cost: modelCost(hubModel.prices),
         contextWindow: builtin.contextWindow,
         maxTokens: builtin.maxTokens,
-        compat: builtin.compat,
+        compat: compat ?? builtin.compat,
       });
     }
   }
