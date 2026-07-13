@@ -27,6 +27,7 @@ CoreInfra models are available under the `coreinfra/` provider, for example:
 pi --model coreinfra/gpt-5.4-nano
 pi --model coreinfra/claude-sonnet-4-20250514
 pi --model coreinfra/deepseek-v4-pro
+pi --model coreinfra/glm-4.7
 ```
 
 ## Configuration
@@ -36,4 +37,4 @@ pi --model coreinfra/deepseek-v4-pro
 | `COREINFRA_API_KEY` | | CoreInfra API token |
 | `COREINFRA_HUB_BASE_URL` | `https://hub.coreinfra.ai` | CoreInfra Hub base URL |
 
-Model availability and prices are loaded from CoreInfra Hub on startup. Model behavior metadata is copied from pi's built-in OpenAI, Anthropic, and DeepSeek model definitions.
+Model availability and prices are loaded from CoreInfra Hub on startup. Model behavior metadata is copied from pi's built-in OpenAI, Anthropic, DeepSeek, and GLM/Zai model definitions.

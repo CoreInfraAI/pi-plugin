@@ -9,8 +9,8 @@ const PROVIDER_ID = "coreinfra";
 const PROVIDER_NAME = "CoreInfra AI Hub";
 const DEFAULT_HUB_BASE_URL = "https://hub.coreinfra.ai";
 const FETCH_TIMEOUT_MS = 10_000;
-type CoreInfraFamily = "openai" | "anthropic" | "deepseek";
-const COREINFRA_FAMILIES = ["openai", "anthropic", "deepseek"] as const;
+type CoreInfraFamily = "openai" | "anthropic" | "deepseek" | "zai";
+const COREINFRA_FAMILIES = ["openai", "anthropic", "deepseek", "zai"] as const;
 
 type CoreInfraPrices = {
   input_tokens?: number;
@@ -37,11 +37,11 @@ function hubBaseUrl(): string {
 }
 
 function openAiBaseUrl(): string {
-  return `${hubBaseUrl()}/codex/api/v1`;
+  return `${hubBaseUrl()}/openai/api/v1`;
 }
 
 function anthropicBaseUrl(): string {
-  return `${hubBaseUrl()}/claude/api`;
+  return `${hubBaseUrl()}/anthropic/api`;
 }
 
 async function fetchHubModels(): Promise<HubResponse> {
@@ -75,7 +75,7 @@ function builtinModel(
 }
 
 function familyConfig(family: CoreInfraFamily): {
-  api: "openai-responses" | "anthropic-messages";
+  api: "openai-responses" | "openai-completions" | "anthropic-messages";
   baseUrl: string;
   compat?: ProviderModelConfig["compat"];
 } {
@@ -92,6 +92,14 @@ function familyConfig(family: CoreInfraFamily): {
         forceAdaptiveThinking: true,
       },
     };
+  }
+
+  // GLM rides its native chat-completions protocol through the hub's OpenAI
+  // endpoint, so it inherits pi's built-in `zai` compat (thinking format and
+  // tool-streaming) rather than defining an explicit override — the opposite
+  // of DeepSeek, which keeps its override for the non-native Anthropic shim.
+  if (family === "zai") {
+    return { api: "openai-completions", baseUrl: openAiBaseUrl() };
   }
 
   return { api: "openai-responses", baseUrl: openAiBaseUrl() };
