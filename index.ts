@@ -12,6 +12,35 @@ const FETCH_TIMEOUT_MS = 10_000;
 type CoreInfraFamily = "openai" | "anthropic" | "deepseek" | "zai";
 const COREINFRA_FAMILIES = ["openai", "anthropic", "deepseek", "zai"] as const;
 
+type ExtraModel = {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  thinkingLevelMap?: Model<Api>["thinkingLevelMap"];
+  input: ("text" | "image")[];
+  contextWindow: number;
+  maxTokens: number;
+  compat?: ProviderModelConfig["compat"];
+};
+
+const EXTRA_MODELS: Partial<Record<CoreInfraFamily, ExtraModel[]>> = {
+  zai: [
+    {
+      id: "glm-4.7-flash",
+      name: "GLM-4.7-Flash",
+      reasoning: true,
+      input: ["text"],
+      contextWindow: 200000,
+      maxTokens: 131072,
+      compat: {
+        supportsDeveloperRole: false,
+        thinkingFormat: "zai",
+        zaiToolStream: true,
+      },
+    },
+  ],
+};
+
 type CoreInfraPrices = {
   input_tokens?: number;
   output_tokens?: number;
@@ -117,24 +146,26 @@ function buildModels(hub: HubResponse): {
     const { api, baseUrl, compat } = familyConfig(family);
 
     for (const [modelId, hubModel] of Object.entries(hubModels)) {
-      const builtin = builtinModel(family, modelId);
-      if (!builtin) {
+      const source =
+        builtinModel(family, modelId) ??
+        EXTRA_MODELS[family]?.find((m) => m.id === modelId);
+      if (!source) {
         warnings.push(`${family}/${modelId} is not known to pi; skipping`);
         continue;
       }
 
       models.push({
         id: modelId,
-        name: hubModel.display_name ?? builtin.name,
+        name: hubModel.display_name ?? source.name,
         api,
         baseUrl,
-        reasoning: builtin.reasoning,
-        thinkingLevelMap: builtin.thinkingLevelMap,
-        input: builtin.input,
+        reasoning: source.reasoning,
+        thinkingLevelMap: source.thinkingLevelMap,
+        input: source.input,
         cost: modelCost(hubModel.prices),
-        contextWindow: builtin.contextWindow,
-        maxTokens: builtin.maxTokens,
-        compat: compat ?? builtin.compat,
+        contextWindow: source.contextWindow,
+        maxTokens: source.maxTokens,
+        compat: compat ?? source.compat,
       });
     }
   }
