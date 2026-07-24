@@ -9,8 +9,19 @@ const PROVIDER_ID = "coreinfra";
 const PROVIDER_NAME = "CoreInfra AI Hub";
 const DEFAULT_HUB_BASE_URL = "https://hub.coreinfra.ai";
 const FETCH_TIMEOUT_MS = 10_000;
-type CoreInfraFamily = "openai" | "anthropic" | "deepseek" | "zai";
-const COREINFRA_FAMILIES = ["openai", "anthropic", "deepseek", "zai"] as const;
+type CoreInfraFamily =
+  | "openai"
+  | "anthropic"
+  | "deepseek"
+  | "zai"
+  | "moonshotai";
+const COREINFRA_FAMILIES = [
+  "openai",
+  "anthropic",
+  "deepseek",
+  "zai",
+  "moonshotai",
+] as const;
 
 type CoreInfraPrices = {
   input_tokens?: number;
@@ -92,6 +103,10 @@ function familyConfig(family: CoreInfraFamily): {
         forceAdaptiveThinking: true,
       },
     };
+  }
+
+  if (family === "moonshotai") {
+    return { api: "openai-completions", baseUrl: openAiBaseUrl() };
   }
 
   // GLM rides its native chat-completions protocol through the hub's OpenAI
