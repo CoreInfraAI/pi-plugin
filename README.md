@@ -29,6 +29,8 @@ pi --model coreinfra/claude-sonnet-4-20250514
 pi --model coreinfra/deepseek-v4-pro
 pi --model coreinfra/glm-4.7
 pi --model coreinfra/kimi-k2.6
+pi --model coreinfra/grok-4.7
+pi --model coreinfra/gemini-3.8-flash
 ```
 
 ## Configuration

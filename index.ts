@@ -15,13 +15,17 @@ type CoreInfraFamily =
   | "anthropic"
   | "deepseek"
   | "zai"
-  | "moonshotai";
+  | "moonshotai"
+  | "xai"
+  | "google";
 const COREINFRA_FAMILIES = [
   "openai",
   "anthropic",
   "deepseek",
   "zai",
   "moonshotai",
+  "xai",
+  "google",
 ] as const;
 
 type ExtraModel = {
@@ -36,6 +40,33 @@ type ExtraModel = {
 };
 
 const EXTRA_MODELS: Partial<Record<CoreInfraFamily, ExtraModel[]>> = {
+  // xAI rejects `reasoning.effort` for these models.
+  xai: [
+    {
+      id: "grok-build-0.1",
+      name: "Grok Build 0.1",
+      reasoning: false,
+      input: ["text", "image"],
+      contextWindow: 256000,
+      maxTokens: 256000,
+    },
+    {
+      id: "grok-4.20-0309-reasoning",
+      name: "Grok 4.20 (Reasoning)",
+      reasoning: false,
+      input: ["text", "image"],
+      contextWindow: 1000000,
+      maxTokens: 30000,
+    },
+    {
+      id: "grok-4.20-0309-non-reasoning",
+      name: "Grok 4.20 (Non-Reasoning)",
+      reasoning: false,
+      input: ["text", "image"],
+      contextWindow: 1000000,
+      maxTokens: 30000,
+    },
+  ],
   zai: [
     {
       id: "glm-4.7-flash",
@@ -165,8 +196,8 @@ function buildModels(hub: HubResponse): {
 
     for (const [modelId, hubModel] of Object.entries(hubModels)) {
       const source =
-        builtinModel(family, modelId) ??
-        EXTRA_MODELS[family]?.find((m) => m.id === modelId);
+        EXTRA_MODELS[family]?.find((m) => m.id === modelId) ??
+        builtinModel(family, modelId);
       if (!source) {
         warnings.push(`${family}/${modelId} is not known to pi; skipping`);
         continue;
